@@ -40,16 +40,12 @@ BROWSER_AGENT_THREADS=4  # 线程池大小
 
 ### 执行浏览器任务
 
-**Endpoint:** POST /browser_use
+**Endpoint:** POST /
 
 **请求体格式：**
 ```json
 {
-    "task": "要执行的任务描述",
-    "params": {
-        "key1": "value1",
-        "key2": "value2"
-    }
+    "task": "要执行的任务描述"
 }
 ```
 
@@ -66,10 +62,9 @@ BROWSER_AGENT_THREADS=4  # 线程池大小
 import requests
 
 response = requests.post(
-    "http://localhost:8000/browser_use",
+    "http://localhost:8000",
     json={
-        "task": "访问百度并搜索Python",
-        "params": {}
+        "task": "访问百度并搜索Python"
     }
 )
 print(response.json())

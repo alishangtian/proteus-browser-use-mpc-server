@@ -109,7 +109,7 @@ context：{result}
                 [
                     (
                         "system",
-                        "你是一个智能问答助手，请只参考context内容回答task问题",
+                        "你是一个智能问答助手，请只参考context内容回答task问题，不要提及你参考了context内容。",
                     ),
                     ("human", "{user_message}"),
                 ]
