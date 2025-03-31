@@ -29,12 +29,12 @@ logger = logging.getLogger(__name__)
 
 class BrowserAgentNode(BaseNode):
     """Browser Agent节点 - 执行浏览器自动化任务"""
-
     def __init__(self):
         """初始化BrowserAgentNode，创建独立的线程池"""
         self._executor = concurrent.futures.ThreadPoolExecutor(
             max_workers=int(os.getenv("BROWSER_AGENT_THREADS", 4))
         )
+        self.agent = None
 
     async def _execute_in_threadpool(self, func, *args, **kwargs):
         """在独立线程池中执行同步函数
@@ -86,15 +86,14 @@ class BrowserAgentNode(BaseNode):
             )
 
             # 创建并执行Agent
-            agent = Agent(
+            self.agent = Agent(
                 task=task,
                 llm=llm,
                 browser=browser,
                 save_conversation_path=os.getenv("BROSWER_SAVE_CONVERSATION_PATH", ""),
                 generate_gif=bool(os.getenv("BROSWER_GENERATE_GIF", "false")),
             )
-            result = await agent.run()
-
+            result = await self.agent.run()
             # 构建结果分析提示
             analysis_prompt = """
             请根据context内容回答task问题，所回答的内容需要从context中提取，不要发散。
@@ -153,6 +152,10 @@ context：{result}
     async def close(self):
         """清理资源，关闭线程池"""
         self._executor.shutdown(wait=True)
+        
+    async def stop(self):
+        """清理资源，关闭线程池"""
+        self.agent.stop()
 
     def __del__(self):
         """析构函数，确保资源被清理"""
