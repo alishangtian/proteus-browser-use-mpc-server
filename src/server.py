@@ -3,6 +3,17 @@ from pydantic import BaseModel
 from typing import Dict, Any
 import uvicorn
 import logging
+import platform
+import asyncio
+
+# Windows平台特定配置
+if platform.system() == "Windows":
+    try:
+        # 强制使用 ProactorEventLoop
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    except Exception as e:
+        logging.warning(f"Failed to set ProactorEventLoop: {e}")
 from .browser_agent import BrowserAgentNode
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -86,4 +97,8 @@ async def shutdown_event():
 
 
 if __name__ == "__main__":
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+    if platform.system() == "Windows":
+        # Windows下使用uvicorn时禁用reload以避免事件循环问题
+        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False, loop="none")
+    else:
+        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)

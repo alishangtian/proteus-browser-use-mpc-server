@@ -20,15 +20,21 @@ from .base import BaseNode
 # 加载环境变量
 load_dotenv()
 
+logger = logging.getLogger(__name__)
+
 # Windows平台特定配置
 if platform.system() == "Windows":
-    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
-
-logger = logging.getLogger(__name__)
+    try:
+        # 强制使用 ProactorEventLoop
+        loop = asyncio.ProactorEventLoop()
+        asyncio.set_event_loop(loop)
+    except Exception as e:
+        logger.warning(f"Failed to set ProactorEventLoop: {e}")
 
 
 class BrowserAgentNode(BaseNode):
     """Browser Agent节点 - 执行浏览器自动化任务"""
+
     def __init__(self):
         """初始化BrowserAgentNode，创建独立的线程池"""
         self._executor = concurrent.futures.ThreadPoolExecutor(
@@ -70,18 +76,16 @@ class BrowserAgentNode(BaseNode):
 
         try:
             # 获取浏览器路径配置
-            browser_path = os.getenv("BROSWER_PATH")
+            browser_path = os.getenv("BROWSER_PATH")
 
-            # 在独立线程中初始化浏览器
-            browser = await self._execute_in_threadpool(
-                Browser, config=BrowserConfig(chrome_instance_path=browser_path)
-            )
+            # 直接在事件循环中初始化浏览器
+            browser = Browser(config=BrowserConfig(chrome_instance_path=browser_path))
 
             # 初始化LLM
             llm = ChatOpenAI(
-                model=os.getenv("BROSWER_USE_MODEL", "gpt-4o"),
-                base_url=os.getenv("BROSWER_USE_BASE_URL", ""),
-                api_key=os.getenv("BROSWER_USE_API_KEY", ""),
+                model=os.getenv("BROWSER_USE_MODEL", "gpt-4o"),
+                base_url=os.getenv("BROWSER_USE_BASE_URL", ""),
+                api_key=os.getenv("BROWSER_USE_API_KEY", ""),
                 temperature=0.0,
             )
 
@@ -90,8 +94,8 @@ class BrowserAgentNode(BaseNode):
                 task=task,
                 llm=llm,
                 browser=browser,
-                save_conversation_path=os.getenv("BROSWER_SAVE_CONVERSATION_PATH", ""),
-                generate_gif=bool(os.getenv("BROSWER_GENERATE_GIF", "false")),
+                save_conversation_path=os.getenv("BROWSER_SAVE_CONVERSATION_PATH", ""),
+                generate_gif=bool(os.getenv("BROWSER_GENERATE_GIF", "false")),
             )
             result = await self.agent.run()
             # 构建结果分析提示
@@ -152,7 +156,7 @@ context：{result}
     async def close(self):
         """清理资源，关闭线程池"""
         self._executor.shutdown(wait=True)
-        
+
     async def stop(self):
         """清理资源，关闭线程池"""
         self.agent.stop()
