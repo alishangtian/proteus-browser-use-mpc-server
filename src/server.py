@@ -5,7 +5,11 @@ import uvicorn
 import logging
 import platform
 import asyncio
+import os
+from dotenv import load_dotenv
 
+# 加载环境变量
+load_dotenv()
 # Windows平台特定配置
 if platform.system() == "Windows":
     try:
@@ -59,7 +63,7 @@ async def execute_task(request: BrowserTaskRequest):
         # 合并task到params
         params = request.params.copy()
         params["task"] = request.task
-        
+
         logger.info(f"执行任务: {request.task}")
 
         # 执行任务
@@ -96,9 +100,12 @@ async def shutdown_event():
     await browser_agent.close()
 
 
-if __name__ == "__main__":
-    if platform.system() == "Windows":
-        # Windows下使用uvicorn时禁用reload以避免事件循环问题
-        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False, loop="none")
-    else:
-        uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
+# if __name__ == "__main__":
+#     port = os.getenv("PORT", 8000)
+#     host = os.getenv("HOST", "0.0.0.0")
+#     print(f"Server running on {host}:{port}")
+#     if platform.system() == "Windows":
+#         # Windows下使用uvicorn时禁用reload以避免事件循环问题
+#         uvicorn.run("server:app", host=host, port=port, reload=False, loop="none")
+#     else:
+#         uvicorn.run("server:app", host=host, port=port, reload=False)
